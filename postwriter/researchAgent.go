@@ -45,7 +45,7 @@ func NewResearchAgent(ctx context.Context, config StepConfig) (*ResearchAgent, e
 		5. If the search tool fails, report the failure honestly.
 		`),
 	)
-	executor := agents.NewExecutor(agent, agents.WithMaxIterations(15), agents.WithReturnIntermediateSteps())
+	executor := agents.NewExecutor(agent, agents.WithMaxIterations(8), agents.WithReturnIntermediateSteps())
 	return &ResearchAgent{executor: executor, searchToolName: search.Name()}, nil
 }
 
@@ -62,6 +62,7 @@ func (researchAgent *ResearchAgent) Execute(ctx context.Context, prompt string) 
 	if !ok {
 		return "", fmt.Errorf("research agent returned no intermediate steps")
 	}
+	
 	var sourceLines []string
 	for _, step := range steps {
 		if strings.EqualFold(step.Action.Tool, researchAgent.searchToolName) {

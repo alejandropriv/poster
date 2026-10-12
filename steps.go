@@ -5,7 +5,17 @@ import poster "github.com/alejandropriv/poster/postwriter"
 var researchStepConfig = poster.StepConfig{
 	LLMProvider: "openai",
 	LLMModel:    "gpt-4o-mini",
-	PromptTemplate: `Today is 12.10.2026. What are the latest kubernetes trends? return the sources you are using to answer the question. If you don't know the answer, say so. Do not make up sources.`,
+	PromptTemplate: `Today is {{.date}}.
+	Write an article about: {{.topic}}, use only information relevant for Date: {{.date}}
+  You are an experienced cloud architect and kubernetes engineer.
+  You identify trends, best practices, statistics and practical insights.
+  You identify production pain points.
+  - Use the provided web-searches.
+  - Return at most 10 bullet points:
+  - focus on 1 key concept at most 3 if referred to the first 1
+  - at most 10 common mistake
+  - at most 10 practical tip
+  Expected Output: Research concise notes with 5 bullets only and reference links`,
 }
 
 var writeStepConfig = poster.StepConfig{
@@ -16,7 +26,7 @@ var writeStepConfig = poster.StepConfig{
 Research:
 {{.research}}
 
-Write a clear, useful post for cloud and Kubernetes practitioners. Preserve factual accuracy and check this source: https://www.linkedin.com/posts/kubernetes-cloudnative-devops-share-7506414279286218753-Bpb1/`,
+Write a clear, useful post for cloud and Kubernetes practitioners. Preserve factual accuracy `,
 }
 
 var optimizeStepConfig = poster.StepConfig{
