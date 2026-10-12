@@ -4,9 +4,8 @@ import poster "github.com/alejandropriv/poster/postwriter"
 
 var researchStepConfig = poster.StepConfig{
 	LLMProvider: "openai",
-	LLMModel:    "gpt-4o",
-	PromptTemplate: `What is the latest tom cruise  movie?
-	`,
+	LLMModel:    "gpt-4o-mini",
+	PromptTemplate: `Today is 12.10.2026. What are the latest kubernetes trends? return the sources you are using to answer the question. If you don't know the answer, say so. Do not make up sources.`,
 }
 
 var writeStepConfig = poster.StepConfig{
@@ -17,7 +16,7 @@ var writeStepConfig = poster.StepConfig{
 Research:
 {{.research}}
 
-Write a clear, useful post for cloud and Kubernetes practitioners. Preserve factual accuracy and include relevant source links.`,
+Write a clear, useful post for cloud and Kubernetes practitioners. Preserve factual accuracy and check this source: https://www.linkedin.com/posts/kubernetes-cloudnative-devops-share-7506414279286218753-Bpb1/`,
 }
 
 var optimizeStepConfig = poster.StepConfig{

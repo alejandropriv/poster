@@ -16,7 +16,7 @@ func main() {
 		log.Printf("No .env file loaded: %v", err)
 	}
 	if err := researchStepConfig.SetConfig(map[string]any{
-		"topic": "What is the kubernetes latest version and what are the new features?",
+		"topic": "Who is the current colombian president?",
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func main() {
 
 
 
-	
+
 	// research, err := chains.Run(context.Background(), researchAgent,
 	// 	"Research the requested topic using Google Search and return concise notes with source links.")
 	// if err != nil {
