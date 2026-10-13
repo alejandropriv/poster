@@ -1,105 +1,38 @@
 package poster
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"regexp"
+import (
+	"context"
+	"fmt"
 
-// 	"github.com/tmc/langchaingo/chains"
-// 	"github.com/tmc/langchaingo/prompts"
-// )
+	langchains "github.com/tmc/langchaingo/chains"
+	"github.com/tmc/langchaingo/prompts"
+)
 
-// var templateInputKey = regexp.MustCompile(`\{\{\s*\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}`)
+// NewSequentialChain builds a sequential chain from its ordered step configs.
+func NewSequentialChain(ctx context.Context, steps ...StepConfig) (*langchains.SequentialChain, error) {
+	if len(steps) == 0 {
+		return nil, fmt.Errorf("sequential chain requires at least one step")
+	}
 
-// // NewChain builds a sequential chain in config order. inputKeys are the keys
-// // supplied to the first stage. Later stages consume the preceding result.
-// // A config with ImagePath set becomes the final JPEG generation stage.
-// func NewChain(configs []ModelConfig, inputKeys []string) (*chains.SequentialChain, error) {
-// 	if len(configs) == 0 {
-// 		return nil, fmt.Errorf("cannot build an empty chain")
-// 	}
-// 	if len(inputKeys) == 0 {
-// 		return nil, fmt.Errorf("initial input keys cannot be empty")
-// 	}
+	chainSteps := make([]langchains.Chain, 0, len(steps))
+	for i, step := range steps {
+		if step.InputKey == "" || step.OutputKey == "" {
+			return nil, fmt.Errorf("chain step %d must define input and output keys", i)
+		}
 
-// 	templates := make([]string, len(configs))
-// 	stageInputs := make([][]string, len(configs))
-// 	for i, config := range configs {
-// 		templates[i] = config.PromptTemplate
-// 		if i == 0 {
-// 			stageInputs[i] = inputKeys
-// 			continue
-// 		}
-// 		keys := uniqueTemplateKeys(config.PromptTemplate)
-// 		if len(keys) != 1 {
-// 			return nil, fmt.Errorf("config %d must use exactly one input key for the previous stage", i)
-// 		}
-// 		stageKey := fmt.Sprintf("stage%d", i)
-// 		templates[i] = renameTemplateKey(config.PromptTemplate, keys[0], stageKey)
-// 		stageInputs[i] = []string{stageKey}
-// 	}
+		model, err := getModel(ctx, step.LLMProvider, step.LLMModel)
+		if err != nil {
+			return nil, fmt.Errorf("create model for chain step %d: %w", i, err)
+		}
+		prompt := prompts.NewPromptTemplate(step.PromptTemplate, []string{step.InputKey})
+		llmChain := langchains.NewLLMChain(model, prompt)
+		llmChain.OutputKey = step.OutputKey
+		chainSteps = append(chainSteps, llmChain)
+	}
 
-// 	steps := make([]chains.Chain, 0, len(configs))
-// 	for i, config := range configs {
-// 		outputKey := "output"
-// 		if i < len(configs)-1 {
-// 			outputKey = stageInputs[i+1][0]
-// 		}
-// 		if config.ImagePath != "" {
-// 			if i != len(configs)-1 {
-// 				return nil, fmt.Errorf("image config must be the last chain stage")
-// 			}
-// 			inputKey := stageInputs[i][0]
-// 			imageStep := NewImage(config.ImagePath)
-// 			image := chains.NewTransform(func(ctx context.Context, values map[string]any, _ ...chains.ChainCallOption) (map[string]any, error) {
-// 				input, ok := values[inputKey].(string)
-// 				if !ok {
-// 					return nil, fmt.Errorf("image input %q must be a string", inputKey)
-// 				}
-// 				prompt := input
-// 				if templates[i] != "" {
-// 					var err error
-// 					prompt, err = prompts.NewPromptTemplate(templates[i], stageInputs[i]).Format(values)
-// 					if err != nil {
-// 						return nil, err
-// 					}
-// 				}
-// 				path, err := imageStep.Execute(ctx, prompt)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 				return map[string]any{"imagePath": path}, nil
-// 			}, stageInputs[i], []string{"imagePath"})
-// 			steps = append(steps, image)
-// 			continue
-// 		}
-
-// 		model, err := newModel(ModelConfig{LLMProvider: config.LLMProvider, LLMModel: config.LLMModel})
-// 		if err != nil {
-// 			return nil, fmt.Errorf("create model for config %d: %w", i, err)
-// 		}
-// 		llmChain := chains.NewLLMChain(model, prompts.NewPromptTemplate(templates[i], stageInputs[i]))
-// 		llmChain.OutputKey = outputKey
-// 		steps = append(steps, llmChain)
-// 	}
-
-// 	outputKey := steps[len(steps)-1].GetOutputKeys()[0]
-// 	return chains.NewSequentialChain(steps, inputKeys, []string{outputKey})
-// }
-
-// func uniqueTemplateKeys(prompt string) []string {
-// 	seen := make(map[string]bool)
-// 	var keys []string
-// 	for _, match := range templateInputKey.FindAllStringSubmatch(prompt, -1) {
-// 		if !seen[match[1]] {
-// 			seen[match[1]] = true
-// 			keys = append(keys, match[1])
-// 		}
-// 	}
-// 	return keys
-// }
-
-// func renameTemplateKey(prompt, oldKey, newKey string) string {
-// 	keyPattern := regexp.MustCompile(`\{\{\s*\.` + regexp.QuoteMeta(oldKey) + `\s*\}\}`)
-// 	return keyPattern.ReplaceAllString(prompt, "{{."+newKey+"}}")
-// }
+	return langchains.NewSequentialChain(
+		chainSteps,
+		[]string{steps[0].InputKey},
+		[]string{steps[len(steps)-1].OutputKey},
+	)
+}

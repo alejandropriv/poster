@@ -11,6 +11,9 @@ import (
 type StepConfig struct {
 	LLMProvider     string
 	LLMModel        string
+	MaxIterations   int
+	InputKey        string
+	OutputKey       string
 	PromptTemplate  string
 	ImageOutputPath string
 	Prompt          string
@@ -22,6 +25,9 @@ func (config *StepConfig) SetConfig(inputParams map[string]any) error {
 		return fmt.Errorf("setting prompt: %w", err)
 	}
 	config.Prompt = prompt
+	if config.MaxIterations <= 0 {
+		config.MaxIterations = 8
+	}
 	return nil
 }
 

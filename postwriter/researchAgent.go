@@ -18,6 +18,18 @@ type ResearchAgent struct {
 	executor       *agents.Executor
 	searchToolName string
 }
+type webSearchTool struct {
+	apiKey string
+	client *http.Client
+}
+type searchSource struct {
+	Title   string `json:"title"`
+	URL     string `json:"link"`
+	Snippet string `json:"snippet"`
+}
+type searchResponse struct {
+	Organic []searchSource `json:"organic_results"`
+}
 
 // NewResearchAgent creates an agent that must search before answering.
 func NewResearchAgent(ctx context.Context, config StepConfig) (*ResearchAgent, error) {
@@ -26,10 +38,11 @@ func NewResearchAgent(ctx context.Context, config StepConfig) (*ResearchAgent, e
 		return nil, fmt.Errorf("create research model: %w", err)
 	}
 
-	search, err := newSearchToolFromEnv()
-	if err != nil {
-		return nil, fmt.Errorf("create search tool: %w", err)
+	searchAPIKey := os.Getenv("SERPAPI_API_KEY")
+	if searchAPIKey == "" {
+		return nil, fmt.Errorf("missing SERPAPI_API_KEY")
 	}
+	search := &webSearchTool{apiKey: searchAPIKey, client: http.DefaultClient}
 
 	agent := agents.NewOpenAIFunctionsAgent(
 		llm,
@@ -45,7 +58,7 @@ func NewResearchAgent(ctx context.Context, config StepConfig) (*ResearchAgent, e
 		5. If the search tool fails, report the failure honestly.
 		`),
 	)
-	executor := agents.NewExecutor(agent, agents.WithMaxIterations(8), agents.WithReturnIntermediateSteps())
+	executor := agents.NewExecutor(agent, agents.WithMaxIterations(config.MaxIterations), agents.WithReturnIntermediateSteps())
 	return &ResearchAgent{executor: executor, searchToolName: search.Name()}, nil
 }
 
@@ -62,7 +75,7 @@ func (researchAgent *ResearchAgent) Execute(ctx context.Context, prompt string) 
 	if !ok {
 		return "", fmt.Errorf("research agent returned no intermediate steps")
 	}
-	
+
 	var sourceLines []string
 	for _, step := range steps {
 		if strings.EqualFold(step.Action.Tool, researchAgent.searchToolName) {
@@ -80,30 +93,6 @@ func (researchAgent *ResearchAgent) Execute(ctx context.Context, prompt string) 
 		}
 	}
 	return "", fmt.Errorf("research agent did not use the %q tool", researchAgent.searchToolName)
-}
-
-type webSearchTool struct {
-	apiKey string
-	client *http.Client
-}
-type searchSource struct {
-	Title   string `json:"title"`
-	URL     string `json:"link"`
-	Snippet string `json:"snippet"`
-}
-type searchResponse struct {
-	Organic []searchSource `json:"organic_results"`
-}
-
-func newSearchToolFromEnv() (*webSearchTool, error) {
-	key := os.Getenv("SERPAPI_API_KEY")
-	if key == "" {
-		key = os.Getenv("SERPER_API_KEY")
-	}
-	if key == "" {
-		return nil, fmt.Errorf("missing SERPAPI_API_KEY (or SERPER_API_KEY)")
-	}
-	return &webSearchTool{apiKey: key, client: http.DefaultClient}, nil
 }
 
 func (*webSearchTool) Name() string { return "GoogleSearch" }
@@ -127,14 +116,17 @@ func (tool *webSearchTool) Call(ctx context.Context, query string) (string, erro
 	if err != nil {
 		return "", err
 	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("SerpAPI returned HTTP %s", resp.Status)
 	}
+
 	var data searchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return "", fmt.Errorf("decode SerpAPI response: %w", err)
 	}
+
 	results := data.Organic[:0]
 	for _, source := range data.Organic {
 		if strings.HasPrefix(source.URL, "https://") || strings.HasPrefix(source.URL, "http://") {

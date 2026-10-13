@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	// "fmt"
 	"log"
-	//"time"
 
 	poster "github.com/alejandropriv/poster/postwriter"
 	"github.com/joho/godotenv"
-	//"github.com/tmc/langchaingo/chains"
+	"github.com/tmc/langchaingo/chains"
 )
 
 func main() {
@@ -21,8 +19,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	println(researchStepConfig.Prompt)
-
 	ctx := context.Background()
 	researchAgent, err := poster.NewResearchAgent(ctx, researchStepConfig)
 	if err != nil {
@@ -33,38 +29,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to run research agent: %v", err)
 	}
-	println(research)
 
-
-
-
-
-
-	// research, err := chains.Run(context.Background(), researchAgent,
-	// 	"Research the requested topic using Google Search and return concise notes with source links.")
-	// if err != nil {
-	// 	log.Fatalf("Research agent failed: %v", err)
-	// }
-
-	// configs := make([]poster.ModelConfig, 0, 3)
-	// for _, path := range []string{"conf_write.txt", "conf_optimize.txt", "conf_image.txt"} {
-	// 	config, err := poster.LoadLLMConfig(path)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	configs = append(configs, config)
-	// }
-
-	// inputKeys := []string{"research"}
-	// workflow, err := poster.NewChain(configs, inputKeys)
-	// if err != nil {
-	// 	log.Fatalf("Failed to build content chain: %v", err)
-	// }
-	// result, err := chains.Call(context.Background(), workflow, map[string]any{
-	// 	"research": research,
-	// })
-	// if err != nil {
-	// 	log.Fatalf("Failed to run content chain: %v", err)
-	// }
-	// fmt.Printf("Generated image: %s\n", result["imagePath"])
+	workflow, err := poster.NewSequentialChain(ctx, writeStepConfig, optimizeStepConfig)
+	if err != nil {
+		log.Fatalf("Failed to build content chain: %v", err)
+	}
+	result, err := chains.Call(ctx, workflow, map[string]any{
+		writeStepConfig.InputKey: research,
+	})
+	if err != nil {
+		log.Fatalf("Failed to run content chain: %v", err)
+	}
+	post, ok := result[optimizeStepConfig.OutputKey].(string)
+	if !ok {
+		log.Fatalf("Content chain returned no %q output", optimizeStepConfig.OutputKey)
+	}
+	println(post)
 }
