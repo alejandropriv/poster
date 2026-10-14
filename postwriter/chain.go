@@ -3,6 +3,7 @@ package poster
 import (
 	"context"
 	"fmt"
+	"time"
 
 	langchains "github.com/tmc/langchaingo/chains"
 	"github.com/tmc/langchaingo/prompts"
@@ -25,6 +26,9 @@ func NewSequentialChain(ctx context.Context, steps ...StepConfig) (*langchains.S
 			return nil, fmt.Errorf("create model for chain step %d: %w", i, err)
 		}
 		prompt := prompts.NewPromptTemplate(step.PromptTemplate, []string{step.InputKey})
+		prompt.PartialVariables = map[string]any{
+			"date": func() string { return time.Now().Local().Format("2006-01-02") },
+		}
 		llmChain := langchains.NewLLMChain(model, prompt)
 		llmChain.OutputKey = step.OutputKey
 		chainSteps = append(chainSteps, llmChain)
