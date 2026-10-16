@@ -58,9 +58,7 @@ var optimizeStepConfig = poster.StepConfig{
 	OutputKey:   "post",
 	PromptTemplate: `
 		Improve the draft below to maximize engagement while preserving its facts and technical accuracy.
-
-		Draft:
-		{{.draft}}
+		Draft: {{.draft}}
 
   You specialize in viral LinkedIn content.
   You create:
@@ -68,13 +66,15 @@ var optimizeStepConfig = poster.StepConfig{
     - CTA
     - image ideas
     - stronger hooks
+		- filename
+		- Format simple, Reduce emojis to the maximum of 2 preferable none
 
   Produce:
     1. Final LinkedIn post ready to be posted
     2. Five hashtags
     3. One detailed image-generation prompt
     4. One CTA suggestion
-    Format simple, Reduce emojis to the maximum of 2 preferable none
+	
 
   expected_output: >
     Markdown containing
@@ -92,6 +92,7 @@ var imageStepConfig = poster.StepConfig{
 	You are an expert Visual artist and art director:
 	You receive an Image prompt for a linkedin image
 	You will generate an image for the LinkedIn post, according to the given guidelines.
+	you will add a small AI generated tag to the image
 	Take into account the following concepts:
   - composition
   - lighting
@@ -102,7 +103,9 @@ var imageStepConfig = poster.StepConfig{
   - realism
   - style
   - important objects
-  - things that must NOT appear
+	- Avoid using text, prefer an icon that a text
+  - things that must NOT appear: humans
+
 `,
-ImageOutputPath: "output_image.png",
+	ImageOutputPath: "POSTS/generated_image.png",
 }
