@@ -55,4 +55,18 @@ server {
 }
 ```
 
+The included `Dockerfile` packages the page with Nginx and uses
+`nginx/default.conf.template` to proxy API requests. Build and run it with:
+
+```sh
+docker build -t poster-web .
+docker run --rm --name poster-web -p 8081:80 \
+	-e POSTER_API_URL=http://host.docker.internal:8080 poster-web
+```
+
+Open `http://localhost:8081`. The default upstream is
+`http://poster-api:8080`; set `POSTER_API_URL` to an address reachable from the
+Nginx container. For a containerized API, put both containers on the same
+Docker network and use the API container's service name.
+
 Run tests with `go test ./...`.
