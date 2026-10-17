@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "poster.fullname" . }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "poster.labels" . | nindent 4 }}
 spec:
@@ -9,6 +10,7 @@ spec:
   selector:
     matchLabels:
       {{- include "poster.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,6 +22,7 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        app.kubernetes.io/component: api
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -27,7 +30,7 @@ spec:
       {{- end }}
       containers:
         - name: poster
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: PORT
@@ -43,10 +46,17 @@ spec:
             httpGet:
               path: /healthz
               port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 100
+
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 100
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

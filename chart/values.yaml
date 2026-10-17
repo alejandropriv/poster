@@ -1,8 +1,10 @@
+namespace: posterapi
 replicaCount: 1
 
 image:
-  repository: poster
+  repository: localhost:5000
   pullPolicy: IfNotPresent
+  name: "poster-api"
   tag: ""
 
 imagePullSecrets: []
@@ -12,6 +14,18 @@ fullnameOverride: ""
 service:
   type: ClusterIP
   port: 8080
+
+nginx:
+  replicaCount: 1
+  image:
+    repository: localhost:5000
+    pullPolicy: IfNotPresent
+    name: "nginx"
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 80
+  resources: {}
 
 secret:
   existingSecret: ""

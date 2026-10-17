@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "poster.fullname" . }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "poster.labels" . | nindent 4 }}
 spec:
@@ -13,3 +14,4 @@ spec:
       name: http
   selector:
     {{- include "poster.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api

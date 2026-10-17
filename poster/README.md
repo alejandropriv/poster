@@ -2,7 +2,7 @@
 
 Runs one LangChain `SequentialChain` from an ordered slice of `LLMConfig` values. `inputKeys` lists the initial inputs (`topic`, `date`); each following config consumes the preceding result. The final config sets `ImagePath` and generates a JPEG with OpenAI's latest image model.
 
-The research stage uses an OpenAI functions agent and SerpAPI's Google Search endpoint. Search results include their titles, snippets, and URLs, and the research output adds a `Sources` list from the returned URLs. Set `SERPAPI_API_KEY` in `.env` to enable search.
+˚The research stage uses an OpenAI functions agent and SerpAPI's Google Search endpoint. Search results include their titles, snippets, and URLs, and the research output adds a `Sources` list from the returned URLs. `OPENAI_API_KEY` and `SERPAPI_API_KEY` are required. Values already present in the process environment (including Kubernetes Secret values) take precedence; `.env` supplies local fallback values. Startup fails if either key is still missing.
 
 Set these values in `.env`:
 
@@ -26,6 +26,16 @@ The request must contain a JSON `topic` string of 1 to 500 characters. Leading
 and repeated whitespace is normalized; control characters and unknown JSON
 fields are rejected. The response includes the normalized topic, generated
 post, and image path. `GET /healthz` returns a health status.
+
+Build and run the API container from this directory with:
+
+```sh
+docker build -t poster-api .
+docker run --rm --name poster-api -p 8080:8080 --env-file .env poster-api
+```
+
+The image uses a Go Alpine build stage and a minimal Alpine runtime. The `.env`
+file is supplied at runtime and excluded from the Docker build context.
 
 ## Static webpage
 
