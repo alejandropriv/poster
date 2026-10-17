@@ -36,8 +36,8 @@ type createPostResponse struct {
 type postGenerator func(context.Context, string) (createPostResponse, error)
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("No .env file loaded: %v", err)
+	if err := loadConfiguration(".env"); err != nil {
+		log.Fatal(err)
 	}
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
@@ -56,9 +56,29 @@ func main() {
 	}
 }
 
+func loadConfiguration(envFile string) error {
+	fileValues, err := godotenv.Read(envFile)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("read environment file: %w", err)
+	}
+	for key, value := range fileValues {
+		if strings.TrimSpace(os.Getenv(key)) == "" {
+			if err := os.Setenv(key, value); err != nil {
+				return fmt.Errorf("load %s from environment file: %w", key, err)
+			}
+		}
+	}
+	for _, key := range []string{"OPENAI_API_KEY", "SERPAPI_API_KEY"} {
+		if strings.TrimSpace(os.Getenv(key)) == "" {
+			return fmt.Errorf("missing required configuration %s", key)
+		}
+	}
+	return nil
+}
+
 func newAPIHandler(generate postGenerator) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET /	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag poster-api:latest --load .", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	mux.HandleFunc("POST /api/v1/posts", func(w http.ResponseWriter, r *http.Request) {

@@ -15,6 +15,10 @@
 {{- end }}
 {{- end }}
 
+{{- define "poster.nginxFullname" -}}
+{{- printf "%s-nginx" (include "poster.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
 {{- define "poster.labels" -}}
 app.kubernetes.io/name: {{ include "poster.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}

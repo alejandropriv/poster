@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: poster
+  repository: poster-api
   pullPolicy: IfNotPresent
   tag: ""
 
@@ -12,6 +12,17 @@ fullnameOverride: ""
 service:
   type: ClusterIP
   port: 8080
+
+nginx:
+  replicaCount: 1
+  image:
+    repository: poster-nginx
+    pullPolicy: IfNotPresent
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 80
+  resources: {}
 
 secret:
   existingSecret: ""

@@ -5,9 +5,44 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestLoadConfigurationUsesEnvironmentBeforeFileAndFallsBackToFile(t *testing.T) {
+	envFile := filepath.Join(t.TempDir(), ".env")
+	if err := os.WriteFile(envFile, []byte("OPENAI_API_KEY=file-openai\nSERPAPI_API_KEY=file-serp\n"), 0600); err != nil {
+		t.Fatalf("write env file: %v", err)
+	}
+	t.Setenv("OPENAI_API_KEY", "secret-openai")
+	t.Setenv("SERPAPI_API_KEY", "")
+
+	if err := loadConfiguration(envFile); err != nil {
+		t.Fatalf("loadConfiguration() error = %v", err)
+	}
+	if got := os.Getenv("OPENAI_API_KEY"); got != "secret-openai" {
+		t.Errorf("OPENAI_API_KEY = %q, want environment value", got)
+	}
+	if got := os.Getenv("SERPAPI_API_KEY"); got != "file-serp" {
+		t.Errorf("SERPAPI_API_KEY = %q, want file fallback", got)
+	}
+}
+
+func TestLoadConfigurationAllowsMissingFileButRequiresKeys(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "openai")
+	t.Setenv("SERPAPI_API_KEY", "serp")
+	if err := loadConfiguration(filepath.Join(t.TempDir(), "missing.env")); err != nil {
+		t.Fatalf("loadConfiguration() with environment values error = %v", err)
+	}
+
+	t.Setenv("SERPAPI_API_KEY", " ")
+	err := loadConfiguration(filepath.Join(t.TempDir(), "missing.env"))
+	if err == nil || !strings.Contains(err.Error(), "SERPAPI_API_KEY") {
+		t.Fatalf("loadConfiguration() error = %v, want missing SERPAPI_API_KEY", err)
+	}
+}
 
 func TestCreatePostEndpoint(t *testing.T) {
 	var generatedTopic string
