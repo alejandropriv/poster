@@ -21,7 +21,7 @@ import (
 	"github.com/tmc/langchaingo/chains"
 )
 
-const maxTopicLength = 250
+const maxTopicLength = 500
 
 type createPostRequest struct {
 	Topic string `json:"topic"`
