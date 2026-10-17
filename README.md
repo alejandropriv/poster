@@ -13,4 +13,18 @@ SERPAPI_API_KEY=...
 IMAGE_OUTPUT=generated/post.jpg
 ```
 
-Run the workflow with `go run .` and tests with `go test ./...`.
+Run the REST API with `go run .`; it listens on port `8080` by default, or on
+the port specified by `PORT`. Create a post with:
+
+```sh
+curl -X POST http://localhost:8080/api/v1/posts \
+	-H 'Content-Type: application/json' \
+	-d '{"topic":"When should a team use Kubernetes in production?"}'
+```
+
+The request must contain a JSON `topic` string of 1 to 250 characters. Leading
+and repeated whitespace is normalized; control characters and unknown JSON
+fields are rejected. The response includes the normalized topic, generated
+post, and image path. `GET /healthz` returns a health status.
+
+Run tests with `go test ./...`.
