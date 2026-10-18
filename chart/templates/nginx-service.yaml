@@ -16,3 +16,4 @@ spec:
   selector:
     {{- include "poster.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: nginx
+    

@@ -270,6 +270,17 @@
       white-space: pre-wrap;
     }
 
+    .generated-image {
+      display: block;
+      width: 100%;
+      max-height: 420px;
+      margin-top: 22px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      object-fit: contain;
+    }
+
     .result-foot {
       display: flex;
       align-items: center;
@@ -361,6 +372,7 @@
           <div class="result-content" id="result-content" hidden>
             <p class="result-topic" id="result-topic"></p>
             <p class="post-text" id="post-text"></p>
+            <img class="generated-image" id="generated-image" alt="Generated artwork for this post" hidden>
             <div class="result-foot">
               <span class="image-path" id="image-path"></span>
               <button class="copy" id="copy-button" type="button" title="Copy generated post">Copy post</button>
@@ -383,6 +395,7 @@
     const resultContent = document.querySelector("#result-content");
     const resultTopic = document.querySelector("#result-topic");
     const postText = document.querySelector("#post-text");
+    const generatedImage = document.querySelector("#generated-image");
     const imagePath = document.querySelector("#image-path");
     const copyButton = document.querySelector("#copy-button");
 
@@ -394,6 +407,8 @@
       event.preventDefault();
       errorMessage.hidden = true;
       resultContent.hidden = true;
+      generatedImage.hidden = true;
+      generatedImage.removeAttribute("src");
       emptyState.hidden = false;
       submitButton.disabled = true;
       buttonLabel.textContent = "Generating...";
@@ -413,6 +428,10 @@
         resultTopic.textContent = `TOPIC  /  ${payload.topic || topicField.value}`;
         postText.textContent = payload.post || "No post was returned.";
         imagePath.textContent = payload.imagePath ? `IMAGE  /  ${payload.imagePath}` : "No image path returned";
+        if (payload.imagePath) {
+          generatedImage.src = `/${payload.imagePath.replace(/^\/+/, "")}`;
+          generatedImage.hidden = false;
+        }
         emptyState.hidden = true;
         resultContent.hidden = false;
       } catch (error) {

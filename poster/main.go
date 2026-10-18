@@ -78,10 +78,8 @@ func loadConfiguration(envFile string) error {
 
 func newAPIHandler(generate postGenerator) http.Handler {
 	mux := http.NewServeMux()
+	mux.Handle("GET /POSTS/{filename}", generatedImageHandler("POSTS"))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
-	mux.HandleFunc("GET /	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag post	docker buildx build --platform linux/amd64 --tag poster-api:latest --load .", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	mux.HandleFunc("POST /api/v1/posts", func(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +117,17 @@ func newAPIHandler(generate postGenerator) http.Handler {
 		writeJSON(w, http.StatusCreated, result)
 	})
 	return mux
+}
+
+func generatedImageHandler(directory string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.PathValue("filename")
+		if filename == "" || filepath.Base(filename) != filename || filepath.Ext(filename) != ".png" {
+			http.NotFound(w, r)
+			return
+		}
+		http.ServeFile(w, r, filepath.Join(directory, filename))
+	}
 }
 
 func generatePost(ctx context.Context, topic string) (createPostResponse, error) {

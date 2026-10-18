@@ -42,6 +42,9 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          volumeMounts:
+            - name: posts
+              mountPath: /app/POSTS
           readinessProbe:
             httpGet:
               path: /healthz
@@ -59,6 +62,10 @@ spec:
             failureThreshold: 100
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: posts
+          persistentVolumeClaim:
+            claimName: {{ include "poster.postsClaimName" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

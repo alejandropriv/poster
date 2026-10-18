@@ -1,0 +1,25 @@
+services:
+  poster-api:
+    build:
+      context: ./poster
+    image: poster-api:local
+    env_file:
+      - ./poster/.env
+    environment:
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./poster/POSTS:/app/POSTS
+
+  nginx:
+    build:
+      context: ./nginx
+    image: poster-nginx:local
+    environment:
+      POSTER_API_URL: http://poster-api:8080
+    ports:
+      - "8081:80"
+    depends_on:
+      - poster-api
+      

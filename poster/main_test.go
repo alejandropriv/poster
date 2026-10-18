@@ -48,6 +48,30 @@ func TestHealthzEndpoint(t *testing.T) {
 	}
 }
 
+func TestGeneratedImageEndpoint(t *testing.T) {
+	imageDirectory := t.TempDir()
+	imageBytes := []byte("generated png")
+	if err := os.WriteFile(filepath.Join(imageDirectory, "post.png"), imageBytes, 0600); err != nil {
+		t.Fatalf("write generated image: %v", err)
+	}
+
+	handler := generatedImageHandler(imageDirectory)
+	request := httptest.NewRequest(http.MethodGet, "/POSTS/post.png", nil)
+	request.SetPathValue("filename", "post.png")
+	response := httptest.NewRecorder()
+	handler(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", response.Code, http.StatusOK, response.Body)
+	}
+	if got := response.Body.Bytes(); string(got) != string(imageBytes) {
+		t.Errorf("body = %q, want %q", got, imageBytes)
+	}
+	if got := response.Header().Get("Content-Type"); got != "image/png" {
+		t.Errorf("Content-Type = %q, want image/png", got)
+	}
+}
+
 func TestLoadConfigurationAllowsMissingFileButRequiresKeys(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "openai")
 	t.Setenv("SERPAPI_API_KEY", "serp")

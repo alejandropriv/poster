@@ -15,12 +15,18 @@ service:
   type: ClusterIP
   port: 8080
 
+persistence:
+  size: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+
 nginx:
   replicaCount: 1
   image:
     repository: localhost:5000
     pullPolicy: IfNotPresent
-    name: "nginx"
+    name: "nginx-poster"
     tag: ""
   service:
     type: ClusterIP

@@ -50,4 +50,7 @@ generated post, and image path as JSON. `GET /healthz` is used by Kubernetes
 probes.
 
 Generated files are written to the container's local `POSTS` directory and are
-not persisted across pod restarts unless storage is added.
+persisted across pod restarts by a 5 Gi PersistentVolumeClaim mounted at
+`/app/POSTS`. Set `persistence.size`, `persistence.accessModes`, or
+`persistence.storageClassName` in `values.yaml` to match the cluster's storage
+provisioner.
