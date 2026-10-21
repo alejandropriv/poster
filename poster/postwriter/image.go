@@ -34,6 +34,14 @@ type imageGenerationResponse struct {
 
 // GenerateImage creates an image from the final post and saves it to config.ImageOutputPath.
 func GenerateImage(ctx context.Context, config StepConfig, post string) (string, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("OPENAI_API_KEY is not set")
+	}
+	return generateImage(ctx, config, post, apiKey, openAIImageGenerationURL, &http.Client{Timeout: 5 * time.Minute})
+}
+
+func generateImage(ctx context.Context, config StepConfig, post, apiKey, endpoint string, client *http.Client) (string, error) {
 	if strings.TrimSpace(post) == "" {
 		return "", fmt.Errorf("post is empty")
 	}
@@ -51,11 +59,6 @@ func GenerateImage(ctx context.Context, config StepConfig, post string) (string,
 		outputFormat = "jpeg"
 	}
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return "", fmt.Errorf("OPENAI_API_KEY is not set")
-	}
-
 	prompt := strings.TrimSpace(config.PromptTemplate) + "\n\nPost and image direction:\n" + strings.TrimSpace(post)
 	body, err := json.Marshal(imageGenerationRequest{
 		Model:        config.LLMModel,
@@ -67,14 +70,13 @@ func GenerateImage(ctx context.Context, config StepConfig, post string) (string,
 		return "", fmt.Errorf("encode image request: %w", err)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, openAIImageGenerationURL, bytes.NewReader(body))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("create image request: %w", err)
 	}
 	request.Header.Set("Authorization", "Bearer "+apiKey)
 	request.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Minute}
 	response, err := client.Do(request)
 	if err != nil {
 		return "", fmt.Errorf("send image request: %w", err)

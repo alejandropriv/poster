@@ -18,15 +18,18 @@ type ResearchAgent struct {
 	executor       *agents.Executor
 	searchToolName string
 }
+
 type webSearchTool struct {
-	apiKey string
-	client *http.Client
+	apiKey   string
+	client   *http.Client
+	endpoint string
 }
 type searchSource struct {
 	Title   string `json:"title"`
 	URL     string `json:"link"`
 	Snippet string `json:"snippet"`
 }
+
 type searchResponse struct {
 	Organic []searchSource `json:"organic_results"`
 }
@@ -42,7 +45,7 @@ func NewResearchAgent(ctx context.Context, config StepConfig) (*ResearchAgent, e
 	if searchAPIKey == "" {
 		return nil, fmt.Errorf("missing SERPAPI_API_KEY")
 	}
-	search := &webSearchTool{apiKey: searchAPIKey, client: http.DefaultClient}
+	search := &webSearchTool{apiKey: searchAPIKey, client: http.DefaultClient, endpoint: "https://serpapi.com/search"}
 
 	agent := agents.NewOpenAIFunctionsAgent(
 		llm,
@@ -100,7 +103,14 @@ func (*webSearchTool) Description() string {
 	return "Search Google and return result titles, URLs, and snippets. Input is a search query."
 }
 func (tool *webSearchTool) Call(ctx context.Context, query string) (string, error) {
-	u, _ := url.Parse("https://serpapi.com/search")
+	endpoint := tool.endpoint
+	if endpoint == "" {
+		endpoint = "https://serpapi.com/search"
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("parse SerpAPI endpoint: %w", err)
+	}
 	params := u.Query()
 	params.Set("q", query)
 	params.Set("google_domain", "google.com")

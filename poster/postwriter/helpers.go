@@ -10,14 +10,13 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
-func getModel(context context.Context, llProvider string, llModel string) (llms.Model, error) {
-
-	switch strings.ToLower(strings.TrimSpace(llProvider)) {
+func getModel(ctx context.Context, provider, model string) (llms.Model, error) {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
 	case "openai":
-		return openai.New(openai.WithModel(llModel))
+		return openai.New(openai.WithModel(model))
 	case "googleai", "gemini":
-		return googleai.New(context, googleai.WithDefaultModel(llModel))
+		return googleai.New(ctx, googleai.WithDefaultModel(model))
 	default:
-		return nil, fmt.Errorf("unsupported text model provider %q", llProvider)
+		return nil, fmt.Errorf("unsupported text model provider %q", provider)
 	}
 }

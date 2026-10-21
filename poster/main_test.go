@@ -145,3 +145,65 @@ func TestCreatePostRejectsInvalidTopicsAndRequests(t *testing.T) {
 		})
 	}
 }
+
+func TestSanitizeTopic(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{name: "collapse whitespace", input: "  Go   for   production ", want: "Go for production"},
+		{name: "unicode", input: "café ☕", want: "café ☕"},
+		{name: "blank", input: " \t ", wantErr: true},
+		{name: "control character", input: "topic\x7f", wantErr: true},
+		{name: "too long", input: strings.Repeat("界", maxTopicLength+1), wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := sanitizeTopic(test.input)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("sanitizeTopic() error = %v, wantErr %t", err, test.wantErr)
+			}
+			if err == nil && got != test.want {
+				t.Errorf("sanitizeTopic() = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestTopicFilename(t *testing.T) {
+	tests := []struct {
+		name  string
+		topic string
+		limit int
+		want  string
+	}{
+		{name: "slugify", topic: "  Go & Kubernetes: In Production! ", limit: 40, want: "go-kubernetes-in-production"},
+		{name: "trim truncated separator", topic: "a very long topic", limit: 6, want: "a-very"},
+		{name: "empty slug fallback", topic: "こんにちは", limit: 20, want: "post"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := topicFilename(test.topic, test.limit); got != test.want {
+				t.Errorf("topicFilename() = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestSavePostCreatesDirectoryAndAppendsNewline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "post.md")
+	if err := savePost(path, "post content"); err != nil {
+		t.Fatalf("savePost() error = %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read saved post: %v", err)
+	}
+	if string(got) != "post content\n" {
+		t.Errorf("saved post = %q, want %q", got, "post content\n")
+	}
+}
