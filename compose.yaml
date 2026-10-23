@@ -2,9 +2,9 @@ services:
   poster-api:
     build:
       context: ./poster
-    image: poster-api:local
+    image: poster-api
     env_file:
-      - ./poster/.env
+      - ./.env
     environment:
       PORT: "8080"
     ports:
@@ -15,7 +15,7 @@ services:
   nginx:
     build:
       context: ./nginx
-    image: poster-nginx:local
+    image: poster-nginx
     environment:
       POSTER_API_URL: http://poster-api:8080
     ports:

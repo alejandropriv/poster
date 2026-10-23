@@ -14,7 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode"
+	//"unicode"
 
 	poster "github.com/alejandropriv/poster/postwriter"
 	"github.com/joho/godotenv"
@@ -176,11 +176,11 @@ func generatePost(ctx context.Context, topic string) (createPostResponse, error)
 }
 
 func sanitizeTopic(topic string) (string, error) {
-	for _, character := range topic {
-		if unicode.IsControl(character) {
-			return "", fmt.Errorf("topic must not contain control characters")
-		}
-	}
+	// for _, character := range topic {
+	// 	if unicode.IsControl(character) {
+	// 		return "", fmt.Errorf("topic must not contain control characters")
+	// 	}
+	// }
 	topic = strings.Join(strings.Fields(topic), " ")
 	if topic == "" {
 		return "", fmt.Errorf("topic is required")
